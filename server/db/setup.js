@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS workflows (
   trigger_type VARCHAR(50) DEFAULT 'manual',
   status VARCHAR(50) DEFAULT 'active',
   workflow_data JSONB DEFAULT '{}',
+  webhook_test_payload JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

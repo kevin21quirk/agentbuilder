@@ -185,6 +185,70 @@ app.post('/api/workflows/:id/execute', async (req, res) => {
   }
 });
 
+// POST /api/webhooks/:workflowId/test — capture test webhook payload
+app.post('/api/webhooks/:workflowId/test', async (req, res) => {
+  try {
+    const { workflowId } = req.params;
+    const payload = req.body;
+    
+    // Store the test payload for the workflow
+    await pool.query(
+      `UPDATE workflows SET webhook_test_payload = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      [JSON.stringify(payload), workflowId]
+    );
+    
+    await pool.query(
+      `INSERT INTO activities (type, description, metadata, created_at)
+       VALUES ('webhook_test', $1, $2, CURRENT_TIMESTAMP)`,
+      [`Test webhook received for workflow ${workflowId}`, JSON.stringify({ workflow_id: workflowId, payload })]
+    );
+    
+    res.json({ success: true, message: 'Test webhook captured', payload });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/webhooks/:workflowId — trigger workflow via webhook
+app.post('/api/webhooks/:workflowId', async (req, res) => {
+  try {
+    const { workflowId } = req.params;
+    const payload = req.body;
+    
+    const workflow = await pool.query('SELECT * FROM workflows WHERE id = $1', [workflowId]);
+    if (workflow.rows.length === 0) {
+      return res.status(404).json({ error: 'Workflow not found' });
+    }
+    
+    const wfData = workflow.rows[0];
+    const steps = wfData.workflow_data?.steps || [];
+    
+    if (steps.length === 0) {
+      return res.status(400).json({ error: 'Workflow has no steps' });
+    }
+    
+    // Create execution with webhook payload as trigger_data
+    const execution = await pool.query(
+      'INSERT INTO workflow_executions (workflow_id, status, result) VALUES ($1, $2, $3) RETURNING *',
+      [workflowId, 'running', JSON.stringify({ steps_total: steps.length, steps_completed: 0, current_step: null, trigger: 'webhook', payload })]
+    );
+    
+    await pool.query(
+      'INSERT INTO activities (type, title, status, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+      ['workflow', `Webhook triggered: ${wfData.name}`, 'running', 'workflow', workflowId]
+    );
+    
+    // Execute workflow with webhook payload as trigger_data
+    const inputContext = { trigger_data: payload };
+    executeWorkflow(workflowId, wfData.name, steps, execution.rows[0].id, inputContext)
+      .catch(err => console.error(`Webhook workflow execution error:`, err));
+    
+    res.json({ success: true, execution_id: execution.rows[0].id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/workflow-executions/:id — get execution status with step results
 app.get('/api/workflow-executions/:id', async (req, res) => {
   try {

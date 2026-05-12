@@ -9,6 +9,7 @@ interface Workflow {
   trigger_type: string;
   status: string;
   workflow_data: { steps?: StepDef[]; input_fields?: InputField[] };
+  webhook_test_payload?: any;
   created_at: string;
 }
 
@@ -29,6 +30,9 @@ export default function WorkflowBuilder() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [inputModalWf, setInputModalWf] = useState<Workflow | null>(null);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const [webhookTestWf, setWebhookTestWf] = useState<Workflow | null>(null);
+  const [webhookFields, setWebhookFields] = useState<string[]>([]);
+  const [testingWebhook, setTestingWebhook] = useState(false);
 
   useEffect(() => { fetchWorkflows(); }, []);
 
@@ -137,6 +141,31 @@ export default function WorkflowBuilder() {
       await fetchWorkflows();
     } catch (err) { console.error(err); }
     finally { setDeleting(null); }
+  };
+
+  const extractFields = (obj: any, prefix = ''): string[] => {
+    const fields: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        fields.push(...extractFields(value, path));
+      } else {
+        fields.push(path);
+      }
+    }
+    return fields;
+  };
+
+  const testWebhook = async (workflow: Workflow) => {
+    setWebhookTestWf(workflow);
+    setTestingWebhook(true);
+    
+    // Check if we already have test data
+    if (workflow.webhook_test_payload) {
+      const fields = extractFields(workflow.webhook_test_payload);
+      setWebhookFields(fields);
+      setTestingWebhook(false);
+    }
   };
 
   return (
@@ -262,15 +291,26 @@ export default function WorkflowBuilder() {
                 )}
 
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => startExecution(workflow)}
-                    disabled={isExec && execStatus === 'running'}
-                    className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 hover:brightness-110"
-                    style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
-                  >
-                    {isExec && execStatus === 'running' ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Play className="h-4 w-4 mr-1" />}
-                    {isExec && execStatus === 'running' ? 'Running...' : 'Execute'}
-                  </button>
+                  {workflow.trigger_type === 'webhook' ? (
+                    <button
+                      onClick={() => testWebhook(workflow)}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110"
+                      style={{ background: 'linear-gradient(135deg, #a78bfa, #163d77)' }}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      Test Webhook
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => startExecution(workflow)}
+                      disabled={isExec && execStatus === 'running'}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 hover:brightness-110"
+                      style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
+                    >
+                      {isExec && execStatus === 'running' ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Play className="h-4 w-4 mr-1" />}
+                      {isExec && execStatus === 'running' ? 'Running...' : 'Execute'}
+                    </button>
+                  )}
                   <button
                     onClick={() => deleteWorkflow(workflow.id, workflow.name)}
                     disabled={deleting === workflow.id}
@@ -624,6 +664,113 @@ export default function WorkflowBuilder() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Webhook Test Modal ── */}
+      {webhookTestWf && (
+        <div className="fixed z-20 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="fixed inset-0 bg-black/60" onClick={() => { setWebhookTestWf(null); setWebhookFields([]); }} />
+            <div className="relative rounded-xl p-6 w-full max-w-2xl" style={{ background: '#163d77', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <h3 className="text-lg font-bold text-white mb-1">Webhook Testing</h3>
+              <p className="text-xs text-blue-200/50 mb-5">Send a test webhook to capture available fields</p>
+
+              {testingWebhook ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3" style={{ color: '#00d4ff' }} />
+                  <p className="text-sm text-white">Waiting for webhook...</p>
+                  <p className="text-xs text-blue-200/50 mt-2">Send a POST request to:</p>
+                  <div className="mt-3 p-3 rounded-lg font-mono text-xs" style={{ background: 'rgba(0,0,0,0.3)', color: '#00d4ff' }}>
+                    POST {window.location.origin}/api/webhooks/{webhookTestWf.id}/test
+                  </div>
+                  <button
+                    onClick={() => setTestingWebhook(false)}
+                    className="mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{ color: '#6b9fd4', background: 'rgba(255,255,255,0.05)' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : webhookFields.length > 0 ? (
+                <div>
+                  <div className="mb-4 p-3 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <p className="text-sm font-semibold text-emerald-400">✓ Test webhook captured!</p>
+                    <p className="text-xs text-emerald-300 mt-1">{webhookFields.length} fields detected</p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h4 className="text-sm font-bold text-white mb-2">Available Fields</h4>
+                    <p className="text-xs text-blue-200/50 mb-3">Use these in your workflow steps with {'{{trigger_data.field}}'} syntax:</p>
+                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      {webhookFields.map(field => (
+                        <div
+                          key={field}
+                          className="p-2 rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                          onClick={() => {
+                            navigator.clipboard.writeText(`{{trigger_data.${field}}}`);
+                            alert(`Copied: {{trigger_data.${field}}}`);
+                          }}
+                        >
+                          <code className="text-xs" style={{ color: '#00d4ff' }}>trigger_data.{field}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg mb-4" style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                    <p className="text-xs" style={{ color: '#00d4ff' }}>
+                      💡 Click any field to copy it. Use in step configurations like: <code>{'{{trigger_data.email}}'}</code>
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setTestingWebhook(true); setWebhookFields([]); }}
+                      className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                      style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}
+                    >
+                      Test Again
+                    </button>
+                    <button
+                      onClick={() => { setWebhookTestWf(null); setWebhookFields([]); }}
+                      className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all"
+                      style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-white mb-4">No test data captured yet</p>
+                  <p className="text-xs text-blue-200/50 mb-4">Send a test webhook to see available fields</p>
+                  <div className="mb-4 p-3 rounded-lg font-mono text-xs text-left" style={{ background: 'rgba(0,0,0,0.3)', color: '#00d4ff' }}>
+                    <div className="mb-2">POST {window.location.origin}/api/webhooks/{webhookTestWf.id}/test</div>
+                    <div className="text-blue-200/50">Content-Type: application/json</div>
+                    <div className="mt-2 text-blue-200/50">{'{'} "email": "test@example.com", "name": "John" {'}'}</div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setTestingWebhook(true)}
+                      className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all"
+                      style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
+                    >
+                      Start Listening
+                    </button>
+                    <button
+                      onClick={() => setWebhookTestWf(null)}
+                      className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: '#6b9fd4', background: 'rgba(255,255,255,0.05)' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
