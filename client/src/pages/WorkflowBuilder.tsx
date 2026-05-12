@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Play, Trash2, Sparkles, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Play, Trash2, Sparkles, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Zap, GitBranch, Settings, X } from 'lucide-react';
 
 interface InputField { key: string; label: string; type: string; required: boolean; placeholder: string; }
 interface Workflow {
@@ -20,6 +20,8 @@ export default function WorkflowBuilder() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', trigger_type: 'manual' });
+  const [workflowSteps, setWorkflowSteps] = useState<StepDef[]>([]);
+  const [editingStep, setEditingStep] = useState<StepDef | null>(null);
   const [executing, setExecuting] = useState<string | null>(null);
   const [execResult, setExecResult] = useState<ExecutionResult | null>(null);
   const [execStatus, setExecStatus] = useState<string | null>(null);
@@ -51,12 +53,49 @@ export default function WorkflowBuilder() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (workflowSteps.length === 0) {
+      alert('Please add at least one step to your workflow');
+      return;
+    }
     try {
-      await fetch('/api/workflows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+      const workflowData = {
+        ...formData,
+        workflow_data: { steps: workflowSteps, input_fields: [] }
+      };
+      await fetch('/api/workflows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(workflowData) });
       await fetchWorkflows();
       setShowModal(false);
       setFormData({ name: '', description: '', trigger_type: 'manual' });
+      setWorkflowSteps([]);
     } catch (err) { console.error(err); }
+  };
+
+  const addStep = (type: 'trigger' | 'action' | 'condition') => {
+    const newStep: StepDef = {
+      id: `step-${Date.now()}`,
+      type,
+      label: type === 'trigger' ? 'New Trigger' : type === 'condition' ? 'New Condition' : 'New Action',
+      config: {}
+    };
+    setWorkflowSteps([...workflowSteps, newStep]);
+    setEditingStep(newStep);
+  };
+
+  const updateStep = (stepId: string, updates: Partial<StepDef>) => {
+    setWorkflowSteps(workflowSteps.map(s => s.id === stepId ? { ...s, ...updates } : s));
+  };
+
+  const deleteStep = (stepId: string) => {
+    setWorkflowSteps(workflowSteps.filter(s => s.id !== stepId));
+    if (editingStep?.id === stepId) setEditingStep(null);
+  };
+
+  const moveStep = (index: number, direction: 'up' | 'down') => {
+    const newSteps = [...workflowSteps];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSteps.length) return;
+    [newSteps[index], newSteps[targetIndex]] = [newSteps[targetIndex], newSteps[index]];
+    setWorkflowSteps(newSteps);
   };
 
   const startExecution = (workflow: Workflow) => {
@@ -250,12 +289,14 @@ export default function WorkflowBuilder() {
       {showModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-black/60" onClick={() => setShowModal(false)} />
-            <div className="relative rounded-xl p-6 w-full max-w-lg" style={{ background: '#163d77', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="fixed inset-0 bg-black/60" onClick={() => { setShowModal(false); setWorkflowSteps([]); setEditingStep(null); }} />
+            <div className="relative rounded-xl p-6 w-full max-w-5xl" style={{ background: '#163d77', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflow: 'auto' }}>
               <form onSubmit={handleSubmit}>
                 <h3 className="text-lg font-bold text-white mb-1">Create New Workflow</h3>
-                <p className="text-xs text-blue-200/50 mb-5">Build a custom workflow from scratch</p>
-                <div className="space-y-4">
+                <p className="text-xs text-blue-200/50 mb-5">Build a visual workflow with triggers, conditions, and actions</p>
+                
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
                     <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Workflow Name</label>
                     <input
@@ -264,18 +305,6 @@ export default function WorkflowBuilder() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="e.g., Lead Qualification Process"
-                      className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Description</label>
-                    <textarea
-                      required
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={3}
-                      placeholder="What does this workflow do?"
                       className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                       style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                     />
@@ -295,17 +324,158 @@ export default function WorkflowBuilder() {
                     </select>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-6">
+                <div className="mb-6">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Description</label>
+                  <textarea
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={2}
+                    placeholder="What does this workflow do?"
+                    className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  />
+                </div>
+
+                {/* Visual Workflow Builder */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#6b9fd4' }}>Workflow Steps ({workflowSteps.length})</label>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => addStep('trigger')} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                        <Zap className="h-3 w-3 inline mr-1 -mt-0.5" /> Add Trigger
+                      </button>
+                      <button type="button" onClick={() => addStep('condition')} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all" style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
+                        <GitBranch className="h-3 w-3 inline mr-1 -mt-0.5" /> Add Condition
+                      </button>
+                      <button type="button" onClick={() => addStep('action')} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all" style={{ background: 'rgba(0,212,255,0.15)', color: '#00d4ff' }}>
+                        <Settings className="h-3 w-3 inline mr-1 -mt-0.5" /> Add Action
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Steps List */}
+                  <div className="space-y-2 mb-4">
+                    {workflowSteps.map((step, idx) => (
+                      <div key={step.id} className="flex items-center gap-2">
+                        <div className="flex-1 p-3 rounded-lg cursor-pointer transition-all" style={{ background: editingStep?.id === step.id ? 'rgba(0,212,255,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${editingStep?.id === step.id ? '#00d4ff' : 'rgba(255,255,255,0.06)'}` }} onClick={() => setEditingStep(step)}>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase" style={{ background: step.type === 'trigger' ? 'rgba(245,158,11,0.2)' : step.type === 'condition' ? 'rgba(139,92,246,0.2)' : 'rgba(0,212,255,0.2)', color: step.type === 'trigger' ? '#f59e0b' : step.type === 'condition' ? '#a78bfa' : '#00d4ff' }}>
+                              {step.type}
+                            </span>
+                            <span className="text-sm text-white font-medium">{step.label}</span>
+                            {step.config.integration && <span className="text-xs" style={{ color: '#6b9fd4' }}>→ {step.config.integration}</span>}
+                            {step.config.action && <span className="text-xs" style={{ color: '#6b9fd4' }}>({step.config.action})</span>}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button type="button" onClick={() => moveStep(idx, 'up')} disabled={idx === 0} className="p-1 rounded hover:bg-white/10 disabled:opacity-30" style={{ color: '#6b9fd4' }}>
+                            <ChevronUp className="h-3 w-3" />
+                          </button>
+                          <button type="button" onClick={() => moveStep(idx, 'down')} disabled={idx === workflowSteps.length - 1} className="p-1 rounded hover:bg-white/10 disabled:opacity-30" style={{ color: '#6b9fd4' }}>
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <button type="button" onClick={() => deleteStep(step.id)} className="p-2 rounded-lg hover:bg-red-500/20 transition-colors" style={{ color: '#ef4444' }}>
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {workflowSteps.length === 0 && (
+                      <div className="text-center py-8 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <p className="text-sm" style={{ color: '#6b9fd4' }}>No steps added yet. Click the buttons above to add triggers, conditions, or actions.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step Editor */}
+                  {editingStep && (
+                    <div className="p-4 rounded-lg" style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-bold text-white">Edit Step: {editingStep.type}</h4>
+                        <button type="button" onClick={() => setEditingStep(null)} className="text-xs" style={{ color: '#6b9fd4' }}>Close</button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Step Label</label>
+                          <input
+                            type="text"
+                            value={editingStep.label}
+                            onChange={(e) => updateStep(editingStep.id, { label: e.target.value })}
+                            className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                          />
+                        </div>
+                        {editingStep.type === 'action' && (
+                          <>
+                            <div>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Integration</label>
+                              <select
+                                value={editingStep.config.integration || ''}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, integration: e.target.value } })}
+                                className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                              >
+                                <option value="" style={{ background: '#163d77', color: 'white' }}>Select integration...</option>
+                                <option value="Zoho CRM" style={{ background: '#163d77', color: 'white' }}>Zoho CRM</option>
+                                <option value="Google Workspace" style={{ background: '#163d77', color: 'white' }}>Google Workspace</option>
+                                <option value="Slack" style={{ background: '#163d77', color: 'white' }}>Slack</option>
+                                <option value="Stripe" style={{ background: '#163d77', color: 'white' }}>Stripe</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Action</label>
+                              <select
+                                value={editingStep.config.action || ''}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, action: e.target.value } })}
+                                className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                              >
+                                <option value="" style={{ background: '#163d77', color: 'white' }}>Select action...</option>
+                                {editingStep.config.integration === 'Zoho CRM' && (
+                                  <>
+                                    <option value="create_contact" style={{ background: '#163d77', color: 'white' }}>Create Contact</option>
+                                    <option value="create_deal" style={{ background: '#163d77', color: 'white' }}>Create Deal</option>
+                                  </>
+                                )}
+                                {editingStep.config.integration === 'Google Workspace' && (
+                                  <>
+                                    <option value="send_email" style={{ background: '#163d77', color: 'white' }}>Send Email</option>
+                                    <option value="create_user" style={{ background: '#163d77', color: 'white' }}>Create User</option>
+                                  </>
+                                )}
+                                {editingStep.config.integration === 'Slack' && (
+                                  <option value="send_message" style={{ background: '#163d77', color: 'white' }}>Send Message</option>
+                                )}
+                                {editingStep.config.integration === 'Stripe' && (
+                                  <option value="list_overdue_invoices" style={{ background: '#163d77', color: 'white' }}>List Overdue Invoices</option>
+                                )}
+                                {!editingStep.config.integration && (
+                                  <>
+                                    <option value="create_task" style={{ background: '#163d77', color: 'white' }}>Create Task</option>
+                                    <option value="log_activity" style={{ background: '#163d77', color: 'white' }}>Log Activity</option>
+                                  </>
+                                )}
+                              </select>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
                   <button
                     type="submit"
                     className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all"
                     style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
                   >
-                    Create Workflow
+                    Create Workflow ({workflowSteps.length} steps)
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => { setShowModal(false); setWorkflowSteps([]); setEditingStep(null); }}
                     className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
                     style={{ color: '#6b9fd4', background: 'rgba(255,255,255,0.05)' }}
                   >
