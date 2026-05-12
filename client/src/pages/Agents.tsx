@@ -79,7 +79,7 @@ export default function Agents() {
   return (
     <div className="px-4 py-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Agents</h1>
+        <h1 className="text-3xl font-bold text-white">Agents</h1>
         <button
           onClick={() => setShowModal(true)}
           className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-black to-red-600 rounded-lg shadow-sm text-sm font-medium text-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

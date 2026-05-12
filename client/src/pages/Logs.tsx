@@ -21,8 +21,8 @@ export default function Logs() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Execution Logs</h1>
-      <p className="text-gray-600 mb-8">Monitor and debug your automation workflows</p>
+      <h1 className="text-3xl font-bold text-white mb-2">Execution Logs</h1>
+      <p className="text-blue-200/50 mb-8">Monitor and debug your automation workflows</p>
       
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">

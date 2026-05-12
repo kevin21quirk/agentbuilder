@@ -249,61 +249,65 @@ export default function WorkflowBuilder() {
 
       {showModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowModal(false)}></div>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="fixed inset-0 bg-black/60" onClick={() => setShowModal(false)} />
+            <div className="relative rounded-xl p-6 w-full max-w-lg" style={{ background: '#163d77', border: '1px solid rgba(255,255,255,0.1)' }}>
               <form onSubmit={handleSubmit}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Workflow</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Workflow Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g., Lead Qualification Process"
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Description</label>
-                      <textarea
-                        required
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        rows={3}
-                        placeholder="What does this workflow do?"
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Trigger Type</label>
-                      <select
-                        value={formData.trigger_type}
-                        onChange={(e) => setFormData({ ...formData, trigger_type: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="manual">Manual</option>
-                        <option value="scheduled">Scheduled</option>
-                        <option value="webhook">Webhook</option>
-                        <option value="event">Event-based</option>
-                      </select>
-                    </div>
+                <h3 className="text-lg font-bold text-white mb-1">Create New Workflow</h3>
+                <p className="text-xs text-blue-200/50 mb-5">Build a custom workflow from scratch</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Workflow Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g., Lead Qualification Process"
+                      className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Description</label>
+                    <textarea
+                      required
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      placeholder="What does this workflow do?"
+                      className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Trigger Type</label>
+                    <select
+                      value={formData.trigger_type}
+                      onChange={(e) => setFormData({ ...formData, trigger_type: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      <option value="manual" style={{ background: '#163d77', color: 'white' }}>Manual</option>
+                      <option value="scheduled" style={{ background: '#163d77', color: 'white' }}>Scheduled</option>
+                      <option value="webhook" style={{ background: '#163d77', color: 'white' }}>Webhook</option>
+                      <option value="event" style={{ background: '#163d77', color: 'white' }}>Event-based</option>
+                    </select>
                   </div>
                 </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <div className="flex gap-3 mt-6">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-r from-black to-red-600 text-base font-medium text-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #00d4ff, #163d77)' }}
                   >
                     Create Workflow
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    style={{ color: '#6b9fd4', background: 'rgba(255,255,255,0.05)' }}
                   >
                     Cancel
                   </button>
