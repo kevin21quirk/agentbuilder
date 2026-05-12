@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './db/connection.js';
-import { executeWorkflowSteps } from './workflowExecutor.js';
+import { executeWorkflow } from './workflowEngine.js';
 
 dotenv.config();
 
@@ -176,8 +176,8 @@ app.post('/api/workflows/:id/execute', async (req, res) => {
     // Return immediately — execution runs asynchronously
     res.json(execution.rows[0]);
 
-    // Execute all steps using the real workflow engine with user-provided context
-    executeWorkflowSteps(req.params.id, wfData.name, steps, execution.rows[0].id, inputContext)
+    // Execute all steps using the new workflow engine with variable support
+    executeWorkflow(req.params.id, wfData.name, steps, execution.rows[0].id, inputContext)
       .catch(err => console.error(`Workflow execution error (${wfData.name}):`, err));
 
   } catch (error) {

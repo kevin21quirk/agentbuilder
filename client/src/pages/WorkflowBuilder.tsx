@@ -406,17 +406,60 @@ export default function WorkflowBuilder() {
                             style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                           />
                         </div>
+                        {editingStep.type === 'condition' && (
+                          <>
+                            <div>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Field (use {{variable}} syntax)</label>
+                              <input
+                                type="text"
+                                value={editingStep.config.field || ''}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, field: e.target.value } })}
+                                placeholder="e.g., client_email or trigger_data.amount"
+                                className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Operator</label>
+                              <select
+                                value={editingStep.config.operator || 'equals'}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, operator: e.target.value } })}
+                                className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                              >
+                                <option value="equals" style={{ background: '#163d77', color: 'white' }}>Equals</option>
+                                <option value="not_equals" style={{ background: '#163d77', color: 'white' }}>Not Equals</option>
+                                <option value="contains" style={{ background: '#163d77', color: 'white' }}>Contains</option>
+                                <option value="greater_than" style={{ background: '#163d77', color: 'white' }}>Greater Than</option>
+                                <option value="less_than" style={{ background: '#163d77', color: 'white' }}>Less Than</option>
+                                <option value="exists" style={{ background: '#163d77', color: 'white' }}>Exists</option>
+                                <option value="not_exists" style={{ background: '#163d77', color: 'white' }}>Not Exists</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Value (supports {{variable}})</label>
+                              <input
+                                type="text"
+                                value={editingStep.config.value || ''}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, value: e.target.value } })}
+                                placeholder="e.g., premium or {{client_tier}}"
+                                className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                              />
+                            </div>
+                          </>
+                        )}
                         {editingStep.type === 'action' && (
                           <>
                             <div>
                               <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Integration</label>
                               <select
                                 value={editingStep.config.integration || ''}
-                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, integration: e.target.value } })}
+                                onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, integration: e.target.value, action: '' } })}
                                 className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
                                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                               >
-                                <option value="" style={{ background: '#163d77', color: 'white' }}>Select integration...</option>
+                                <option value="" style={{ background: '#163d77', color: 'white' }}>Internal Actions</option>
                                 <option value="Zoho CRM" style={{ background: '#163d77', color: 'white' }}>Zoho CRM</option>
                                 <option value="Google Workspace" style={{ background: '#163d77', color: 'white' }}>Google Workspace</option>
                                 <option value="Slack" style={{ background: '#163d77', color: 'white' }}>Slack</option>
@@ -441,7 +484,7 @@ export default function WorkflowBuilder() {
                                 {editingStep.config.integration === 'Google Workspace' && (
                                   <>
                                     <option value="send_email" style={{ background: '#163d77', color: 'white' }}>Send Email</option>
-                                    <option value="create_user" style={{ background: '#163d77', color: 'white' }}>Create User</option>
+                                    <option value="create_calendar_event" style={{ background: '#163d77', color: 'white' }}>Create Calendar Event</option>
                                   </>
                                 )}
                                 {editingStep.config.integration === 'Slack' && (
@@ -454,9 +497,57 @@ export default function WorkflowBuilder() {
                                   <>
                                     <option value="create_task" style={{ background: '#163d77', color: 'white' }}>Create Task</option>
                                     <option value="log_activity" style={{ background: '#163d77', color: 'white' }}>Log Activity</option>
+                                    <option value="http_request" style={{ background: '#163d77', color: 'white' }}>HTTP Request</option>
+                                    <option value="set_variable" style={{ background: '#163d77', color: 'white' }}>Set Variable</option>
+                                    <option value="delay" style={{ background: '#163d77', color: 'white' }}>Delay</option>
                                   </>
                                 )}
                               </select>
+                            </div>
+                            
+                            {/* Action-specific configuration */}
+                            {editingStep.config.action === 'send_email' && (
+                              <>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>To (supports {{client_email}})</label>
+                                  <input type="text" value={editingStep.config.to || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, to: e.target.value } })} placeholder="{{client_email}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Subject</label>
+                                  <input type="text" value={editingStep.config.subject || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, subject: e.target.value } })} placeholder="Welcome {{client_name}}!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Body</label>
+                                  <textarea rows={3} value={editingStep.config.body || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, body: e.target.value } })} placeholder="Hi {{client_name}}, welcome!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                              </>
+                            )}
+                            {editingStep.config.action === 'send_message' && (
+                              <>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Channel</label>
+                                  <input type="text" value={editingStep.config.channel || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, channel: e.target.value } })} placeholder="#general" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Message</label>
+                                  <textarea rows={2} value={editingStep.config.text || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, text: e.target.value } })} placeholder="New client: {{client_name}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                              </>
+                            )}
+                            {editingStep.config.action === 'create_task' && (
+                              <>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Task Title</label>
+                                  <input type="text" value={editingStep.config.title || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, title: e.target.value } })} placeholder="Follow up with {{client_name}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Days from now</label>
+                                  <input type="number" value={editingStep.config.days_from_now || 3} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, days_from_now: parseInt(e.target.value) } })} className="w-full px-2 py-1.5 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                </div>
+                              </>
+                            )}
+                            <div className="mt-2 p-2 rounded" style={{ background: 'rgba(0,212,255,0.08)' }}>
+                              <p className="text-[9px]" style={{ color: '#00d4ff' }}>💡 Use {{'{{'}}variable{{'}}'}} syntax to insert dynamic data from webhook, inputs, or previous steps</p>
                             </div>
                           </>
                         )}
