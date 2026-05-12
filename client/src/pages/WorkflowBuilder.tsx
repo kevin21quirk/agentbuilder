@@ -409,7 +409,7 @@ export default function WorkflowBuilder() {
                         {editingStep.type === 'condition' && (
                           <>
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Field (use {{variable}} syntax)</label>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Field (use variable syntax)</label>
                               <input
                                 type="text"
                                 value={editingStep.config.field || ''}
@@ -437,12 +437,12 @@ export default function WorkflowBuilder() {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Value (supports {{variable}})</label>
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Value (supports variables)</label>
                               <input
                                 type="text"
                                 value={editingStep.config.value || ''}
                                 onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, value: e.target.value } })}
-                                placeholder="e.g., premium or {{client_tier}}"
+                                placeholder="e.g., premium or client_tier"
                                 className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                               />
@@ -509,16 +509,16 @@ export default function WorkflowBuilder() {
                             {editingStep.config.action === 'send_email' && (
                               <>
                                 <div>
-                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>To (supports {{client_email}})</label>
-                                  <input type="text" value={editingStep.config.to || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, to: e.target.value } })} placeholder="{{client_email}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>To (supports variables)</label>
+                                  <input type="text" value={editingStep.config.to || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, to: e.target.value } })} placeholder="client_email" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Subject</label>
-                                  <input type="text" value={editingStep.config.subject || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, subject: e.target.value } })} placeholder="Welcome {{client_name}}!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                  <input type="text" value={editingStep.config.subject || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, subject: e.target.value } })} placeholder="Welcome client_name!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Body</label>
-                                  <textarea rows={3} value={editingStep.config.body || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, body: e.target.value } })} placeholder="Hi {{client_name}}, welcome!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                  <textarea rows={3} value={editingStep.config.body || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, body: e.target.value } })} placeholder="Hi client_name, welcome!" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
                                 </div>
                               </>
                             )}
@@ -530,7 +530,7 @@ export default function WorkflowBuilder() {
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Message</label>
-                                  <textarea rows={2} value={editingStep.config.text || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, text: e.target.value } })} placeholder="New client: {{client_name}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                  <textarea rows={2} value={editingStep.config.text || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, text: e.target.value } })} placeholder="New client: client_name" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
                                 </div>
                               </>
                             )}
@@ -538,7 +538,7 @@ export default function WorkflowBuilder() {
                               <>
                                 <div>
                                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Task Title</label>
-                                  <input type="text" value={editingStep.config.title || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, title: e.target.value } })} placeholder="Follow up with {{client_name}}" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                  <input type="text" value={editingStep.config.title || ''} onChange={(e) => updateStep(editingStep.id, { config: { ...editingStep.config, title: e.target.value } })} placeholder="Follow up with client_name" className="w-full px-2 py-1.5 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#6b9fd4' }}>Days from now</label>
@@ -547,7 +547,7 @@ export default function WorkflowBuilder() {
                               </>
                             )}
                             <div className="mt-2 p-2 rounded" style={{ background: 'rgba(0,212,255,0.08)' }}>
-                              <p className="text-[9px]" style={{ color: '#00d4ff' }}>💡 Use {{'{{'}}variable{{'}}'}} syntax to insert dynamic data from webhook, inputs, or previous steps</p>
+                              <p className="text-[9px]" style={{ color: '#00d4ff' }}>💡 Use {'{{variable}}'} syntax to insert dynamic data from webhook, inputs, or previous steps</p>
                             </div>
                           </>
                         )}
